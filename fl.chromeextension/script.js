@@ -16,9 +16,11 @@ limitations under the License.
 
 function linkify(){
   var treeWalker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT), textNode;
-  var nodes = []
+  var nodes = [] //keep track of all the matching text nodes
 
+  //looks for @username handles 
   var regexAt = /\@([a-zA-Z0-9\-\_]+)/g;
+  //looks for "r&p: username" or "m/username" type mentions
   var regexRMP = /((?:[\"\ \/\;\:\&\-]|^)[mMrRpP][\:\/][\ ]?)([a-zA-Z0-9\-\_]+)/g;
 
   while(textNode = treeWalker.nextNode()) {
@@ -27,11 +29,14 @@ function linkify(){
         nodes.push(textNode)
       }
       else if(textNode.nodeValue.search(regexRMP) >= 0){
-        nodes.push(textNode)
+        nodes.push(textNode) //keep track of every pattern match
       }
     }
   }
 
+
+  //replace all the matching text in one go
+  //this prevents issues where the tree is not traversed properly
   for (var i = 0; i < nodes.length; i++) {
     //console.log(nodes[i].parentElement.innerHTML)
     nodes[i].parentElement.innerHTML = nodes[i].parentElement.innerHTML
@@ -40,11 +45,14 @@ function linkify(){
   }
 }
 
+//listen to messages from the background thread
+//This allows us to re-run the linkfy code when
+//RESTful APIs are called
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     console.log(request);
     if (request.feedUpdate)
-      linkify();
+      linkify(); //re-run the linkfying code
   });
 
-linkify()
+linkify() //run on initial page load, required for static pages
